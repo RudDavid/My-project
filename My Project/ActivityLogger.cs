@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ProjectForSecondSemester {
+namespace My_Project {
   public class ActivityLogger : ITaskObserver {
     // Реализуем метод интерфейса ITaskObserver
     public void Update(TaskItem task, string eventDescription) {

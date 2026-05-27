@@ -1,4 +1,4 @@
-﻿namespace ProjectForSecondSemester {
+﻿namespace My_Project {
   public interface ITaskObserver {
     // Метод, который будет вызываться при изменении задачи
     // task - сама задача, которая изменилась

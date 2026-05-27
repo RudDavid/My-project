@@ -1,67 +1,166 @@
-﻿using System;
+﻿using My_Project;
+using System;
 
-namespace ProjectForSecondSemester {
-  internal class Program {
-    public static void Main() {
-      Console.WriteLine("=== Тестирование DeadlineNotifier ===\n");
+namespace My_Project {
+  class Program {
+    static TaskManager taskManager;
+    static ActivityLogger logger;
+    static DeadlineNotifier notifier;
 
-      // Создаем логгер (будет общим для всех задач)
-      ActivityLogger logger = new ActivityLogger();
+    static void Main(string[] args) {
+      // Инициализируем менеджер и подписчиков
+      taskManager = new TaskManager();
+      logger = new ActivityLogger();
+      notifier = new DeadlineNotifier(24);  // Предупреждать за 24 часа
 
-      // Создаем уведомитель (предупреждать за 24 часа до дедлайна)
-      DeadlineNotifier notifier = new DeadlineNotifier(24);
+      Console.WriteLine("=== TaskFlow - Менеджер задач ===\n");
 
-      Console.WriteLine("=== Создаем задачи ===\n");
+      bool running = true;
 
-      // Задача 1: дедлайн уже прошел (вчера)
-      TaskItem task1 = new TaskItem(
-          "Сдать старую лабораторную",
-          "Эту работу нужно было сдать ещё вчера",
-          DateTime.Now.AddDays(-1)
-      );
-      task1.Attach(logger);
-      task1.Attach(notifier);
+      while (running) {
+        // Главное меню
+        Console.WriteLine("\n=== ГЛАВНОЕ МЕНЮ ===");
+        Console.WriteLine("1. Создать задачу");
+        Console.WriteLine("2. Показать все задачи");
+        Console.WriteLine("3. Показать детали задачи");
+        Console.WriteLine("4. Изменить статус задачи");
+        Console.WriteLine("5. Выйти");
+        Console.Write("Выберите действие: ");
 
-      // Задача 2: дедлайн скоро (через 1 минуту для теста)
-      TaskItem task2 = new TaskItem(
-          "Срочная задача",
-          "Дедлайн почти наступил",
-          DateTime.Now.AddMinutes(1)
-      );
-      task2.Attach(logger);
-      task2.Attach(notifier);
+        string choice = Console.ReadLine();
 
-      // Задача 3: дедлайн не скоро (через 7 дней)
-      TaskItem task3 = new TaskItem(
-          "Курсовой проект",
-          "Времени ещё много",
-          DateTime.Now.AddDays(7)
-      );
-      task3.Attach(logger);
-      task3.Attach(notifier);
+        switch (choice) {
+          case "1":
+            CreateTask();
+            break;
+          case "2":
+            ShowAllTasks();
+            break;
+          case "3":
+            ShowTaskDetails();
+            break;
+          case "4":
+            ChangeTaskStatus();
+            break;
+          case "5":
+            running = false;
+            Console.WriteLine("До свидания!");
+            break;
+          default:
+            Console.WriteLine("Неверный выбор. Попробуйте снова.");
+            break;
+        }
+      }
+    }
 
-      // Выводим информацию о задачах
-      Console.WriteLine("Текущее состояние задач:");
-      task1.DisplayInfo();
-      task2.DisplayInfo();
-      task3.DisplayInfo();
+    // Создание новой задачи
+    static void CreateTask() {
+      Console.WriteLine("\n=== СОЗДАНИЕ ЗАДАЧИ ===");
 
-      // Теперь меняем статусы и смотрим на реакцию
-      Console.WriteLine("=== Изменяем статус просроченной задачи ===\n");
-      task1.ChangeStatus("В работе");
+      Console.Write("Название: ");
+      string title = Console.ReadLine();
 
-      Console.WriteLine("\n=== Изменяем статус срочной задачи ===\n");
-      task2.ChangeStatus("В работе");
+      Console.Write("Описание: ");
+      string description = Console.ReadLine();
 
-      Console.WriteLine("\n=== Изменяем статус обычной задачи ===\n");
-      task3.ChangeStatus("В работе");
+      Console.Write("Дедлайн (в часах от текущего момента): ");
+      int hours;
+      while (!int.TryParse(Console.ReadLine(), out hours)) {
+        Console.Write("Введите число: ");
+      }
 
-      // Выполняем срочную задачу и проверяем, что уведомления прекратились
-      Console.WriteLine("\n=== Выполняем срочную задачу ===\n");
-      task2.ChangeStatus("Выполнена");
+      DateTime deadline = DateTime.Now.AddHours(hours);
 
-      Console.WriteLine("Нажми любую клавишу для выхода...");
-      _ = Console.ReadKey();
+      TaskItem newTask = new TaskItem(title, description, deadline);
+
+      // Подписываем наблюдателей
+      newTask.Attach(logger);
+      newTask.Attach(notifier);
+
+      // Добавляем в менеджер
+      taskManager.AddTask(newTask);
+
+      Console.WriteLine($"\nЗадача '{title}' успешно создана!");
+      Console.WriteLine($"Дедлайн установлен на: {deadline:dd.MM.yyyy HH:mm}");
+    }
+
+    // Показать список всех задач
+    static void ShowAllTasks() {
+      Console.WriteLine("\n=== СПИСОК ЗАДАЧ ===");
+      taskManager.DisplayAllTasks();
+    }
+
+    // Показать детали конкретной задачи
+    static void ShowTaskDetails() {
+      Console.WriteLine("\n=== ДЕТАЛИ ЗАДАЧИ ===");
+
+      if (taskManager.Count == 0) {
+        Console.WriteLine("Нет доступных задач.");
+        return;
+      }
+
+      taskManager.DisplayAllTasks();
+
+      Console.Write("\nВведите номер задачи: ");
+      int index;
+      while (!int.TryParse(Console.ReadLine(), out index) || index < 0 || index >= taskManager.Count) {
+        Console.Write("Введите корректный номер: ");
+      }
+
+      TaskItem task = taskManager.GetTaskByIndex(index);
+      Console.WriteLine();
+      task.DisplayInfo();
+    }
+
+    // Изменить статус задачи
+    static void ChangeTaskStatus() {
+      Console.WriteLine("\n=== ИЗМЕНЕНИЕ СТАТУСА ===");
+
+      if (taskManager.Count == 0) {
+        Console.WriteLine("Нет доступных задач.");
+        return;
+      }
+
+      taskManager.DisplayAllTasks();
+
+      Console.Write("\nВведите номер задачи: ");
+      int index;
+      while (!int.TryParse(Console.ReadLine(), out index) || index < 0 || index >= taskManager.Count) {
+        Console.Write("Введите корректный номер: ");
+      }
+
+      TaskItem task = taskManager.GetTaskByIndex(index);
+
+      Console.WriteLine($"\nТекущий статус: {task.Status}");
+      Console.WriteLine("Доступные статусы:");
+      Console.WriteLine("1. Новая");
+      Console.WriteLine("2. В работе");
+      Console.WriteLine("3. На проверке");
+      Console.WriteLine("4. Выполнена");
+      Console.Write("Выберите новый статус: ");
+
+      string statusChoice = Console.ReadLine();
+      string newStatus = "";
+
+      switch (statusChoice) {
+        case "1":
+          newStatus = "Новая";
+          break;
+        case "2":
+          newStatus = "В работе";
+          break;
+        case "3":
+          newStatus = "На проверке";
+          break;
+        case "4":
+          newStatus = "Выполнена";
+          break;
+        default:
+          Console.WriteLine("Неверный выбор статуса.");
+          return;
+      }
+
+      task.ChangeStatus(newStatus);
     }
   }
 }

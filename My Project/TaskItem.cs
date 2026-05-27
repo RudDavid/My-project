@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ProjectForSecondSemester {
+namespace My_Project {
   // Класс, представляющий задачу
   public class TaskItem {
     private readonly List<ITaskObserver> observers;  // Список подписчиков

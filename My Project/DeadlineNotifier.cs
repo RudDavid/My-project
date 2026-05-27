@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ProjectForSecondSemester {
+namespace My_Project {
   public class DeadlineNotifier : ITaskObserver {
     // Порог предупреждения - за сколько часов до дедлайна начинать беспокоиться
     private readonly int warningHours;
